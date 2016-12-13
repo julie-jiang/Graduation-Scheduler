@@ -20,7 +20,8 @@ class Scheduler:
         fulfilled = set([START])
         seq = [START]
         seq = self.fulfill_req(END, seq)
-        print "RESULTS: ", seq
+        print "RESULTS: "
+        pprint(seq)
     def fulfill_req(self, node, seq):
         print "fulfilling", node
         
@@ -28,23 +29,24 @@ class Scheduler:
         seqs = []
         for reqs in self.graph[node]:
             print "at node ", node, " reqs = ", reqs
-            newseq = seq[:]
+            newseqs = [seq[:]]
             for class_ in reqs:
                 print "at node ", node, " class_ = ", class_
-                if class_ not in newseq:
-                    newseq= self.fulfill_req(class_, newseq)
-                    print "at node ", node, " newseq: ", newseq
+                if class_ not in newseqs[0]:
+                    newseqs = self.fulfill_req(class_, newseqs[0])
+                    print "at node ", node, " newseq: ", newseqs
             if not re.match('.*\+', node):
-                newseq.append(node)
-            print "at node ", node, " reqs = ", reqs, " newseq: ", newseq
-            if newseq != seq[:]:
-                seqs.append(newseq)
+                for s in newseqs:
+                    s.append(node)
+            print "at node ", node, " reqs = ", reqs, " newseq: ", newseqs
+            for s in newseqs:
+                if s != seq[:]:
+                    seqs.append(s)
 
         print "at node ", node, " seqs: ", seqs
         min_len = min(len(s) for s in seqs)
-        s = min(seqs, key = lambda x: len(x))
-        print "at node ", node , " best seq: ", s
-        return s
+        return [s for s in seqs if len(s) == min_len]
+
 
 if __name__ == "__main__":
     
@@ -84,22 +86,24 @@ if __name__ == "__main__":
     s.add('math.168', ['math.135', 'math.145'])
 
     s.add('math.100+', ['math.104'], ['math.112'], ['math.126'], ['math.128'],\
-                       ['math.150.time'], \
+                       ['math.150.time'], ['math.136'], ['math.146'], \
                        ['math.150.data'], ['math.150.poverty'], \
                        ['math.150.chaos'], ['math.150.scicomp'], ['math.158'],\
                        ['math.161'], ['math.162'], ['math.168'])
     s.add('math.50+', ['math.51'], ['math.61'], ['math.63'], ['math.87'], \
                       ['math.104'], ['math.112'], ['math.126'], \
-                      ['math.128'], \
+                      ['math.128'], ['math.136'], ['math.146'], \
                       ['math.150.time'], ['math.150.data'], \
                       ['math.150.poverty'], ['math.150.chaos'], \
                       ['math.150.scicomp'], ['math.158'], ['math.161'], \
                       ['math.162'], ['math.168'])
   
     s.add(END, ['math.42', 'math.70', 'math.135', 'math.145', \
-                'math.136', 'math.100+', 'math.50+'])
+                'math.136', 'math.100+', 'math.100+', 'math.50+', \
+                'math.50+', 'math.50+'])
     s.add(END, ['math.42', 'math.70', 'math.135', 'math.145', \
-                'math.146', 'math.100+', 'math.50+'])
+                'math.136', 'math.100+', 'math.100+', 'math.50+', \
+                'math.50+', 'math.50+'])
     #pprint(s.graph)
     #print
     s.shortest_path()
