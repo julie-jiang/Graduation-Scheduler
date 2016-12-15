@@ -1,4 +1,4 @@
-\documentclass[11pt, oneside]{article}  
+\documentclass[12pt, oneside]{article}  
 \usepackage[margin=1in]{geometry}                       % See geometry.pdf to learn the layout options. There are lots.
 \geometry{a4paper}                          % ... or a4paper or a5paper or ... 
 %\geometry{landscape}                       % Activate for rotated page geometry
@@ -15,6 +15,10 @@
 \usepackage{hyperref}
 \usepackage{float}
 \usepackage{todonotes}
+\usepackage{scrextend}
+
+
+\newenvironment{hlvt}{\fontfamily{phv}\selectfont}{\par}
 \usepackage{flafter}
 \renewcommand{\floatpagefraction}{.8}%
 \renewcommand{\topfraction}{.9}
@@ -31,12 +35,12 @@
 \setlist[enumerate]{itemsep=0mm}
 {}
 \setlength\parindent{0pt}
-\setlength{\parskip}{1em}
+\setlength{\parskip}{0em}
 %SetFonts
 
 %SetFonts
 
-\title{So You Think You Can Gradaute\vspace{0em}}
+\title{So You Think You Can Gradaute}
 \author{Julie Jiang}
 %\date{}                            % Activate to display a given date or no date
 
@@ -53,23 +57,97 @@ Given the constraints, what are the possible schedules of classes to take each s
 We will use a depth-first backtracking algorithm to generate all the possible sequence of classes that satisfy the Math major requirements. We will then analyze the ``best'' sequences, which are the ones that complete the requirement in the shortest amount of time and/or smallest number of classes. We will then use a Gantt chart to illustrate the findings.
 
 \end{abstract}
-\section{Introduction}
+\section{Introduction and Assumptions} 
+All class prerequisites are taken from either the \color{blue}\href{http://Math.tufts.edu/courses/}{course descriptions }\color{black}  listed on the Tufts Math Department webpage, or the \color{blue}\href{https://sis.uit.tufts.edu}{Tufts Student Information System }\color{black} webpage. For this model, we consider only the classes that are offered in the semesters of Fall 2016 and Spring 2017, which means some of the optional classes that normally can be used to fulfill the requirements will not be considered in this model if they are not offered in the year 16-17 (such as Math 72 Abstract Linera Algebra). This is because information on the enrollment prerequisites on these classes either can't be found online or is outdated. 
+
+\bigskip
+
+Without loss of generality, we also neglect to consider classes that require nothing but `departmental consent' (such as Math 104 Math Education Change and Invariance). Classes that can be used to fulfill the Math major requirement but are not listed in the math department are also ignored, since they may or may not encompass a whole different set of prerequisites. 
+
+\bigskip
+
+In addition to the class prerequisites, we also factor in the semester of which a class is offered. While most classes are offered both semesters, some classes, such as Math 135 Real Analysis I, is offered only in the Fall, and some classes, such as Math 136 Real Analysis II, is offered only in the Spring. To account for this, we make this distinction between Fall and Spring semesters.
+
+\bigskip
+For the remainder of this paper, we will refer to the classes by their course number.
+
+\section{Math Concentration Checklist}
+The required classes for a math major are 
+    \begin{enumerate}
+        \item Math 42 or Math 44
+        \item Math 70
+        \item Math 135
+        \item Math 145
+        \item Math 136 or Math 146
+        \item Three addiional Math classes with course number above 50
+        \item Three additional Math classes with course number above 100
+    \end{enumerate}
+In this model, we assume that the first five core classes have the following prerequisites and semester requirements
+    \begin{itemize}
+        \item Math 42 requires the completion of either Math 34 or Math 39 and is offered both semesters.
+        \item Math 44 requires the completion of either Math 39 or (Math 34 and Math 70) and is offered both semesters.
+        \item Math 70 requires the completion of either Math 39 or Math and is offered both semesters.
+        \item Math 135 requires the completion of (Math 34 or Math 39) and Math 70 and is offered only in the Fall.
+        \item Math 136 requires the completion of Math 135 and is offered only in the Spring.
+        \item Math 145 requires the completion of Math 70 and is offered only in the Fall.
+        \item Math 146 requires the completiion of Math and is offered only in the Spring.
 
 
-\subsection{Assumptions}
-All class prerequisites are taken from either the \color{blue}\href{http://Math.tufts.edu/courses/}{course descriptions }\color{black}  listed on the Tufts Math Department webpage, or the \color{blue}\href{https://sis.uit.tufts.edu}{Tufts Student Information System }\color{black} webpage. For this model, we consider only the classes that are offered in the semesters of Fall 2016 and Spring 2017, which means some of the optional classes that normally can be used to fulfill the requirements will not be considered in this model if they are not offered in the year 16-17 (such as Math 72 Abstract Linera Algebra. This because information on the enrollment prequisites on these classes either can't be found online or is outdated. 
+    \end{itemize}
 
-Without loss of generality, we also neglect to consider classes that require nothing but `departmental consent' (such as Math 104 Math Education Change and Invariance). 
+\section{Algorithm}
+The algorithm used to generate all possible sequence of classes is a depth-first, backtracking algorithm. For our purposes, a class may have more than one set of classes that can satisfy its prerequisites. For example, Math 87 requires Math 32 or Math 39 \textit{and} Math 70. In logical notation, this means that 
+    \[
+        \textrm{Requirement}(\textrm{Math 87}) = (\textrm{Math 34} \ \lor \ \textrm{Math 39}) \wedge \textrm{Math 70}.
+    \]
 
-For the remainder of this paper, we will refer to classes by their course number. For a full list of the classes considered in this model, including their respective prequisites, please see Appendix A. For the graduation requirements used in this project, please see Appendix B.
+To fulfill a prequisite for a class, we only need to satisfy one set of requirements.
 
+\bigskip
+
+
+Below is a abstracted pseudocode of the algorithm.
+
+\bigskip
+
+
+
+    \begin{addmargin}[1cm]{0em}
+    \textsc{Schedule}(\textit{class}, \textit{sequence})\\
+        Intialize an empty list of \textit{new-sequences} \\
+        \textbf{foreach} set of prequisite that satisfy this \textit{class}:
+            \begin{addmargin}[1cm]{0em}
+                \textbf{foreach} pre-class $\in$ prequisite:
+                \begin{addmargin}[1cm]{0em}
+                    \textbf{if} pre-class is not found in \textit{sequence}:
+                    \begin{addmargin}[1cm]{0em}
+                        new-sequences = new-sequences + \textsc{Schedule}(pre-class, sequence)
+                    \end{addmargin}
+                \end{addmargin}
+
+            \end{addmargin}
+
+        \textbf{return} the shortest sequences in new-sequences
+    \end{addmargin}
+
+\bigskip
+The full source code can be found on my \color{blue}\href{https://github.com/julie-jiang/graduation-scheduler}{Github Repository}\color{black}.
 
 \section{The Modeling Problem}
-Preliminary explorations suggest that given all the constraints of the Math major requirement, a Math student has to take 11 courses in total to satisfy the requirement. This includes one calculus II class that is not required for major but required as a prerequisite for many other classes.
+Preliminary explorations suggest that given all the constraints of the Math major requirement, a Math student has to take 11 courses in total to satisfy the requirement. This includes one calculus II class that is not required as a major concetration but is required as a prerequisite for many other classes.
+
+\bigskip
+
 
 One important constraint in choosing a sequence of classes to take is that a student typically takes between 3 to 6 classes every semester. There are, of course, other classes that a student has to take that lies outside of the Math requirement, but we won't consider those because we want to focus more on investigating how Math major requirements specifically affect graduation.
 
+\bigskip
+
+
 We extract the best possible sequence of classes for a given \textit{quota} per semester, where quota is the maximum number of Math classes a student can take every semester. The best sequence of classes are defined to be the ones the require the least amount of classes taken in total, and spans the least amount of semesters. 
+
+\bigskip
+
 
 An example of one of the best sequence of classes given a quota of 3 is the following:
     \begin{itemize}
@@ -80,7 +158,13 @@ An example of one of the best sequence of classes given a quota of 3 is the foll
     \item 3rd year fall: Math 161
     \end{itemize}
 
+\bigskip
+
+
 The number of possible permutations grows with the quota, as to be expected, since larger quota introduces larger variation. However, it is interesting to see that there is a lower bound for the number of semesters needed. No matter how many classes a student is allowed to take each semester, he or she needs at least 4 semesters to complete all requirements. This is due to the constraints placed on some of the core classes in terms of their prerequisites.
+
+\bigskip
+
 
 We also observe that if a student takes only 1 Math class every semester, then he or she will not be able to graduate on time (in 8 semesters).
 
@@ -102,10 +186,20 @@ We also observe that if a student takes only 1 Math class every semester, then h
 \subsection{Sensitivity}
 We want to find how sensitive each class is to graduation. To do this, we will calculate the free float of each class. Free float is defined to be the number of semesters a course can be delayed taking without delaying any other courses. 
 
+\bigskip
+
+
 To do this, for each possible sequence obtained above, we backtrack from the last course that is scheduled to be taken to find the last possible semester it can be taken while still maintaining the total number of semesters. 
 
-In the example above, Math 87 has a free float of 2, and the rest have no free floats. Which means that the rest of the classes cannot be delayed -- they must be taken on time. Math 87 has large total floats because it is offered both semester and and does not require as many prerequisites. 
+\bigskip
 
+
+In the example above, Math 87 has a free float of 2 semesters, and the rest have no free floats. Which means that the rest of the classes cannot be delayed -- they must be taken on time. Math 87 has large total floats because it is offered both semester and and does not require as many prerequisites. 
+
+\bigskip
+
+
+Below is the same example of sequences above, with Math 87 moved two semesters after: 
 \begin{itemize}
     \item 1st year fall: Math 34
     \item 1st year spring: Math 42, Math 70, Math 112
@@ -117,6 +211,9 @@ In the example above, Math 87 has a free float of 2, and the rest have no free f
 
 
 It is easy to see that free float is dependent on the quota, or the maximum number of Math classes that one can take every semester. The more space. So we will repeat this process for each quota, and avearge the free floats for each class. Most classes have free floats of 0, meaning they are critical to the sequence to gradaution. The classes that have nonzero free floats are listed below.
+
+\bigskip
+
 
 \begin{center}
     \begin{tabular}{|l | c | c | c | c |}
@@ -137,29 +234,71 @@ It is easy to see that free float is dependent on the quota, or the maximum numb
     \bottomrule
     \end{tabular}
 \end{center}
-About half of all the classes have a consistent total float of 0, or no total float. The majority of those that do have total floats have them smaller than 1, which means that on average they either can't be delayed or are only delayed for a semester. 
+
+\bigskip
+
+
+About half of all the classes have a consistent free float of 0, or no total float, and are therefore not shown. The majority of those that do have total floats have them smaller than 1, which means that on average they either can't be delayed or are only delayed for a semester. 
 
 \subsection{Gantt Charts}
 To help us visualize the data, we can build a Gantt chart, a type of bar char that illustrates a project schedule. A Gantt chart is particularly insightful as it clearly encodes the relation of activity dependecies to time [1].
 The following figure is the Gantt Chart for the best possible sequence of classes when the quota is 3. The cells in red mark the core classes, and the cells in blue mark the electives. The arrows indicate dependency relations. For example, The arrow that originates from the far right of the first cell means that Math 42 or Math 44 depends on Math 34 or Math 39. The dotted arrows indicate that the dependency may or may not exist, given the possibility of classes that cell represents.
 
+\bigskip
+
+
 Since there are more than 5000 possible combination of sequence of classes, it is simply not feasible to draw each and every one of them out. The following graph is a simplified version. Without loss of generality we can group Math 34 and 39 together, since they are both calculus II classes (one is standard level calculus and the other is Honors level), and for the same reason Math 42 and 44 are grouped together.
 
+\bigskip
+
+
 The cells that have a tail of black line connected to it indicate the slackness of the class, or its average free float.  
-\begin{figure}[!htb]
+
+\bigskip
+
+
+\begin{figure}[H]
 \caption{Path to Graduation for Math Majors When Quota = 3}
 \includegraphics[scale=0.45]{"gantt quota 3".png}
 \end{figure}
 
+\bigskip
+
+
 Below is another Gantt chart when quota is 4. Some of the dotted lines are removed to enhance clarity.
+
+\bigskip
+
+
 \begin{figure}[!htb]
 \caption{Path to Graduation for Math Majors When Quota = 4}
 \includegraphics[scale=0.45]{"gantt quota 4".png}
 \end{figure}
-From these charts, it is clear that the number of semesters in order to fulfill graduation requirement is at least 4, regardless of the quota.
+
+\bigskip
+
+
+From these charts, it is clear that the number of semesters in order to fulfill graduation requirement is at least 4, regardless of the quota. We also observe that Math 112 is a highly selected elective. This is in part due to the fact that Math 112 requires only the completion of Math 34 or Math 39, which is a lot less than what a lot other classes above the hundred level require. Therefore, Math 112 can be taken a lot earlier. 
 
 
 \section{Discussion}
+
+
+In this model, we assume that a student wants to take as many Math classes each semester as the quota allows. We also assume that a student has no desire to take an additional Math class that may not fulfill graduation requirement but may bring about personal satisfaction. This is due to the fact these variations cannot be very mathematically well defined. 
+
+\bigskip
+
+We also highly abstracted the complexity of graduation requirements. For example, the distribution requirements required by the School of Arts and Sciences is entirely neglected. This is due to the fact that many of these requirements do not have prerequisites, and thus will not add to the dimensionality of our scheduling problem, but will exponentially increase the possible permutations. 
+
+\bigskip
+
+That said, including the full package of the graduation requirement will improve the accuracy of the model. Currently, all the free floats are calculated as the number semesters a class can be delayed without delaying any subsequent class in the sequence, but the sequences are designed to complete the math requirement as fast as possible, with no consideration whatsoever of the fact that a student has eight semesters in total.
+
+\bigskip
+
+As another room for improvement, we could also introduce probability to our model. Currently, this model is pure deterministic, but life is not. A student might not be able to take, for one reason or another, a class that he or she initially scheduled to take. 
+\bigskip
+
 \section{Sources}
 [1] Clark, Wallace, Walter Nicholas Polakov, and Frank W. Trabold. The Gantt chart: A working tool of management. Ronald Press Company, 1922.
 
