@@ -1,0 +1,180 @@
+\documentclass[11pt, oneside]{article}  
+\usepackage[margin=1in]{geometry}                       % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                          % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                       % Activate for rotated page geometry
+%\usepackage[parfill]{parskip}          % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}               % Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+                                % TeX will automatically convert eps --> pdf in pdflatex        
+\usepackage{amssymb}
+
+\usepackage{enumitem}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{gensymb}
+\usepackage{placeins}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{todonotes}
+\usepackage{flafter}
+\renewcommand{\floatpagefraction}{.8}%
+\renewcommand{\topfraction}{.9}
+
+\usepackage{amsthm}
+\usepackage{amsmath}
+
+\renewcommand\labelitemii{\textperiodcentered }
+\newcommand{\card}{{\raise.17ex\hbox{$\scriptstyle\Mathtt{\sim}$}}}
+
+\usepackage[ampersand]{easylist}
+
+% ...
+\setlist[enumerate]{itemsep=0mm}
+{}
+\setlength\parindent{0pt}
+\setlength{\parskip}{1em}
+%SetFonts
+
+%SetFonts
+
+\title{So You Think You Can Gradaute\vspace{0em}}
+\author{Julie Jiang}
+%\date{}                            % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+\begin{abstract}
+College can be overwhelming, especially when it comes to trying to meet all the graduation requirements, which are quite interdependent. For example, a Math major student a Tufts must complete 13 classes in the Math department. One of these classes is Math 87 Math Modeling, which requires the completion of Math 34 or 39 and Math 70. A student's time is also limited -- one can only take 5 or 6 classes at most per semester, for a total of 8 semesters. 
+
+
+Given the constraints, what are the possible schedules of classes to take each semester so that a Math major can graduate on time? In this project, we will explore the different sequence of classes that a Math major must take in order to graduate. Our interest is to optimize the class scheduling problem. Like other scheduling problems, we want to aim to reduce the total time (or the number of semesters) spent fulfilling the requirements and maximize the utility of each class that will be taken. The utility of a class is defined by how much it contributes to fulfilling graduation requirements. 
+
+We will use a depth-first backtracking algorithm to generate all the possible sequence of classes that satisfy the Math major requirements. We will then analyze the ``best'' sequences, which are the ones that complete the requirement in the shortest amount of time and/or smallest number of classes. We will then use a Gantt chart to illustrate the findings.
+
+\end{abstract}
+\section{Introduction}
+
+
+\subsection{Assumptions}
+All class prerequisites are taken from either the \color{blue}\href{http://Math.tufts.edu/courses/}{course descriptions }\color{black}  listed on the Tufts Math Department webpage, or the \color{blue}\href{https://sis.uit.tufts.edu}{Tufts Student Information System }\color{black} webpage. For this model, we consider only the classes that are offered in the semesters of Fall 2016 and Spring 2017, which means some of the optional classes that normally can be used to fulfill the requirements will not be considered in this model if they are not offered in the year 16-17 (such as Math 72 Abstract Linera Algebra. This because information on the enrollment prequisites on these classes either can't be found online or is outdated. 
+
+Without loss of generality, we also neglect to consider classes that require nothing but `departmental consent' (such as Math 104 Math Education Change and Invariance). 
+
+For the remainder of this paper, we will refer to classes by their course number. For a full list of the classes considered in this model, including their respective prequisites, please see Appendix A. For the graduation requirements used in this project, please see Appendix B.
+
+
+\section{The Modeling Problem}
+Preliminary explorations suggest that given all the constraints of the Math major requirement, a Math student has to take 11 courses in total to satisfy the requirement. This includes one calculus II class that is not required for major but required as a prerequisite for many other classes.
+
+One important constraint in choosing a sequence of classes to take is that a student typically takes between 3 to 6 classes every semester. There are, of course, other classes that a student has to take that lies outside of the Math requirement, but we won't consider those because we want to focus more on investigating how Math major requirements specifically affect graduation.
+
+We extract the best possible sequence of classes for a given \textit{quota} per semester, where quota is the maximum number of Math classes a student can take every semester. The best sequence of classes are defined to be the ones the require the least amount of classes taken in total, and spans the least amount of semesters. 
+
+An example of one of the best sequence of classes given a quota of 3 is the following:
+    \begin{itemize}
+    \item 1st year fall: Math 34
+    \item 1st year spring: Math 42, Math 70, Math 112
+    \item 2nd year fall: Math 135, Math 145, Math 87
+    \item 2nd year spring: Math 136, Math 158, Math 146
+    \item 3rd year fall: Math 161
+    \end{itemize}
+
+The number of possible permutations grows with the quota, as to be expected, since larger quota introduces larger variation. However, it is interesting to see that there is a lower bound for the number of semesters needed. No matter how many classes a student is allowed to take each semester, he or she needs at least 4 semesters to complete all requirements. This is due to the constraints placed on some of the core classes in terms of their prerequisites.
+
+We also observe that if a student takes only 1 Math class every semester, then he or she will not be able to graduate on time (in 8 semesters).
+
+\begin{center}
+    \begin{tabular}{c | c | c}
+        \toprule
+        Quota per Semester & Number of Semesters Needed & Number of Possibilities \\
+        \midrule
+        1 & 13 &5109 \\
+        2 & 6 & 5850 \\ 
+        3 & 5 & 5204 \\
+        4 & 4 & 7280 \\
+        5 & 4 & 10910 \\
+        6 & 4 & 11158 \\
+        \bottomrule
+    \end{tabular}
+\end{center}
+
+\subsection{Sensitivity}
+We want to find how sensitive each class is to graduation. To do this, we will calculate the free float of each class. Free float is defined to be the number of semesters a course can be delayed taking without delaying any other courses. 
+
+To do this, for each possible sequence obtained above, we backtrack from the last course that is scheduled to be taken to find the last possible semester it can be taken while still maintaining the total number of semesters. 
+
+In the example above, Math 87 has a free float of 2, and the rest have no free floats. Which means that the rest of the classes cannot be delayed -- they must be taken on time. Math 87 has large total floats because it is offered both semester and and does not require as many prerequisites. 
+
+\begin{itemize}
+    \item 1st year fall: Math 34
+    \item 1st year spring: Math 42, Math 70, Math 112
+    \item 2nd year fall: Math 135, Math 145 \color{gray}, Math 87 \color{black}
+    \item 2nd year spring: Math 136, Math 158, Math 146
+    \item 3rd year fall: Math 161, \textit{Math 87}
+    \end{itemize}
+
+
+
+It is easy to see that free float is dependent on the quota, or the maximum number of Math classes that one can take every semester. The more space. So we will repeat this process for each quota, and avearge the free floats for each class. Most classes have free floats of 0, meaning they are critical to the sequence to gradaution. The classes that have nonzero free floats are listed below.
+
+\begin{center}
+    \begin{tabular}{|l | c | c | c | c |}
+    \toprule
+    & \multicolumn{4}{|c|}{Avg free float}   \\
+    Course Name         & Quota = 3 & Quota = 4 & Quota = 5 & Quota = 6 \\ 
+    \midrule
+    Math 42              & 1.33 & 0.09 & 0.14 & 0.15 \\
+    Math 44              & 0.21 & 0.03 & 0.08 & 0.10 \\
+    Math 51              & 0.68 & 0.42 & 0.97 & 1.00\\
+    Math 87              & 1.92 & 0.41 & 0.97 & 1.00\\
+    Math 112             & 0.52 & 1.14 & 1.92 & 2.00\\
+    Math 135             & 0.37 & 0.00 & 0.00 & 0.00 \\ 
+    Math 145             & 0.37 & 0.00 & 0.00& 0.00 \\ 
+    Math 150 Poverty     & 0.44 & 0.00 & 0.00& 0.00 \\ 
+    Math 150 Sci Comp    & 0.62 & 0.00 & 0.00& 0.00 \\ 
+    Math 161             & 0.29 & 0.00 & 0.00& 0.00 \\ 
+    \bottomrule
+    \end{tabular}
+\end{center}
+About half of all the classes have a consistent total float of 0, or no total float. The majority of those that do have total floats have them smaller than 1, which means that on average they either can't be delayed or are only delayed for a semester. 
+
+\subsection{Gantt Charts}
+To help us visualize the data, we can build a Gantt chart, a type of bar char that illustrates a project schedule. A Gantt chart is particularly insightful as it clearly encodes the relation of activity dependecies to time [1].
+The following figure is the Gantt Chart for the best possible sequence of classes when the quota is 3. The cells in red mark the core classes, and the cells in blue mark the electives. The arrows indicate dependency relations. For example, The arrow that originates from the far right of the first cell means that Math 42 or Math 44 depends on Math 34 or Math 39. The dotted arrows indicate that the dependency may or may not exist, given the possibility of classes that cell represents.
+
+Since there are more than 5000 possible combination of sequence of classes, it is simply not feasible to draw each and every one of them out. The following graph is a simplified version. Without loss of generality we can group Math 34 and 39 together, since they are both calculus II classes (one is standard level calculus and the other is Honors level), and for the same reason Math 42 and 44 are grouped together.
+
+The cells that have a tail of black line connected to it indicate the slackness of the class, or its average free float.  
+\begin{figure}[!htb]
+\caption{Path to Graduation for Math Majors When Quota = 3}
+\includegraphics[scale=0.45]{"gantt quota 3".png}
+\end{figure}
+
+Below is another Gantt chart when quota is 4. Some of the dotted lines are removed to enhance clarity.
+\begin{figure}[!htb]
+\caption{Path to Graduation for Math Majors When Quota = 4}
+\includegraphics[scale=0.45]{"gantt quota 4".png}
+\end{figure}
+From these charts, it is clear that the number of semesters in order to fulfill graduation requirement is at least 4, regardless of the quota.
+
+
+\section{Discussion}
+\section{Sources}
+[1] Clark, Wallace, Walter Nicholas Polakov, and Frank W. Trabold. The Gantt chart: A working tool of management. Ronald Press Company, 1922.
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -28,11 +28,14 @@ class Scheduler:
             match = re.match('^.*\.([1-9][0-9]+)(\..*)?$', course)
             if match and int(match.group(1)) >= course_number:
                 courses.append(course)
-        self.electives[elective] = courses
+        #self.electives[elective] = courses
+        #self.electives['elective1'] = ['math.145', 'math.61']
+        #self.electives['elective2'] = ['math.126', 'math.128', 'math.161', 'math.162']
 
     def grad_requirement(self, reqs):
-        elec_combs = self.get_combs()
+        #elec_combs = self.get_combs()
         #print elec_combs
+        elec_combs = []
         
         for req in reqs:
             for comb in elec_combs:
@@ -40,7 +43,7 @@ class Scheduler:
                     self.add_course(self.END, prereqs = [req + comb])
     def schedule(self):
         seqs = self.fulfill_req(self.END, [[self.START]])
-        filename = 'math_major_' + str(self.quota) + '.pickle'
+        filename = 'applied_math_major_' + str(self.quota) + '.pickle'
         pickle.dump(seqs, open(filename, 'wb')) 
 
     def fulfill_req(self, course, seq):
@@ -83,11 +86,11 @@ class Scheduler:
 
     def get_combs(self):
         all_combs = []
-        for comb1 in combinations(self.electives['math.50+'], 2):
-            for comb2 in combinations(self.electives['math.100+'], 3):
-                if self.mutually_exclusive(comb1, comb2):
-                    all_combs += [list(comb1) + list(comb2)]
-
+        for comb1 in self.electives['elective1']:
+            for comb2 in self.electives['elective2']:
+                for comb3 in self.electives['math.61+']:
+                    if comb1 != comb2 and comb2 != comb3 and comb1 != comb3:
+                        all_combs.append([comb1, comb2, comb3])
         return all_combs
 
     def mutually_exclusive(self, comb1, comb2):
@@ -139,7 +142,7 @@ class Scheduler:
 
 
 if __name__ == "__main__":
-    s = Scheduler(1)
+    s = Scheduler(3)
     s.add_course('math.21')
     s.add_course('math.32')
     s.add_course('math.34')
@@ -174,17 +177,15 @@ if __name__ == "__main__":
     s.add_course('math.162', prereqs = [['math.161']], semester = 's')
     s.add_course('math.168', prereqs = [['math.135', 'math.145']], semester = 's')
 
-    s.add_electives('math.100+', 100)
-    s.add_electives('math.50+', 50)
-    
-    elective_req = {'math.50+': 3}
-    s.grad_requirement([['math.42', 'math.70', 'math.135', 'math.145',
-                         'math.136'], 
-                         ['math.42', 'math.70', 'math.135', 'math.145',
-                         'math.146'],
-                         ['math.44', 'math.70', 'math.135', 'math.145',
-                         'math.136'],
-                         ['math.44', 'math.70', 'math.135', 'math.145',
-                         'math.146']])
+    s.add_electives('math.61+', 61)
+    s.grad_requirement([['math.42', 'math.70', 'math.51', 'math.87', 'math.158' 'math.135', 'math.136', 'math.126', 'math.128']])
+    '''
+                        ['math.44', 'math.70', 'math.51', 'math.87', 'math.158' 'math.135', 'math.136', 'math.126', 'math.128'],
+                        ['math.42', 'math.70', 'math.150.chaos', 'math.87', 'math.158' 'math.135', 'math.136', 'math.126', 'math.128'],
+                        ['math.44', 'math.70', 'math.150.chaos', 'math.87', 'math.158' 'math.135', 'math.136', 'math.126', 'math.128'],
+                        ['math.42', 'math.70', 'math.51', 'math.87', 'math.158' 'math.135', 'math.136', 'math.161', 'math.162'], 
+                        ['math.44', 'math.70', 'math.51', 'math.87', 'math.158' 'math.135', 'math.136', 'math.161', 'math.162'],
+                        ['math.42', 'math.70', 'math.150.chaos', 'math.87', 'math.158' 'math.135', 'math.136', 'math.161', 'math.162'],
+                        ['math.44', 'math.70', 'math.150.chaos', 'math.87', 'math.158' 'math.135', 'math.136', 'math.161', 'math.162']])'''
 
     s.schedule()
